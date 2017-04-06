@@ -52,6 +52,7 @@
 #include "movement/MoveSplineInit.h"
 #include "movement/MoveSpline.h"
 #include "CreatureLinkingMgr.h"
+
 #ifdef ENABLE_ELUNA
 #include "LuaEngine.h"
 #include "ElunaEventMgr.h"
@@ -593,8 +594,20 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
 
     uint32 health = pVictim->GetHealth();
     DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "deal dmg:%d to health:%d ", damage, health);
+// Start of PVPReward code
+    Player* attacker = GetCharmerOrOwnerPlayerOrPlayerItself();
+    Player* victim = pVictim->GetCharmerOrOwnerPlayerOrPlayerItself();
 
+    if (attacker && victim && damage && attacker != victim)
+    {
+        uint32 dmgNoOverkill = damage;
 
+        if (dmgNoOverkill - GetHealth() < 0)
+            dmgNoOverkill -= GetHealth();
+
+        victim->ToCPlayer()->AddDamage(attacker->GetObjectGuid(), dmgNoOverkill);
+    }
+// End of PVPReward code
     // Rage from Damage made (only from direct weapon damage)
     if (cleanDamage && damagetype == DIRECT_DAMAGE && this != pVictim && GetTypeId() == TYPEID_PLAYER && (GetPowerType() == POWER_RAGE))
     {
@@ -695,7 +708,10 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
     if (health <= damage)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "DealDamage %s Killed %s", GetGuidStr().c_str(), pVictim->GetGuidStr().c_str());
-
+// Start of PVPReward code
+        if (attacker && victim)
+            victim->ToCPlayer()->HandlePvPKill();
+// End of PVPReward code
         /*
          *                      Preparation: Who gets credit for killing whom, invoke SpiritOfRedemtion?
          */
@@ -5704,7 +5720,13 @@ void Unit::UnsummonAllTotems()
 int32 Unit::DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellProto, bool critical)
 {
     int32 gain = pVictim->ModifyHealth(int32(addhealth));
+// Start of PVPReward code
+    Player* attacker = GetCharmerOrOwnerPlayerOrPlayerItself();
+    Player* victim = pVictim->GetCharmerOrOwnerPlayerOrPlayerItself();
 
+    if (attacker && victim && gain > 0 && attacker != victim)
+        victim->ToCPlayer()->AddDamage(attacker->GetObjectGuid(), uint32(gain));
+// End of PVPReward code
     Unit* unit = this;
 
     if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)

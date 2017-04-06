@@ -26,6 +26,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot
     ${CMAKE_CURRENT_SOURCE_DIR}/BattleGround
     ${CMAKE_CURRENT_SOURCE_DIR}/ChatCommands
+    ${CMAKE_CURRENT_SOURCE_DIR}/Custom
     ${CMAKE_CURRENT_SOURCE_DIR}/Maps
     ${CMAKE_CURRENT_SOURCE_DIR}/MotionGenerators
     ${CMAKE_CURRENT_SOURCE_DIR}/Object
